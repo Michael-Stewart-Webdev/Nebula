@@ -1,0 +1,1 @@
+- make ghost boss destroy all flying UFOs when he does his spooky roar thing

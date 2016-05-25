@@ -1,0 +1,54 @@
+﻿$space-color: #030303;
+
+
+body {
+	padding:0;
+	margin:0;
+	background:#666;
+}
+
+canvas#canvas {
+	display:block;
+	margin: 0 auto;
+	background:#000;
+    -ms-transform: scale(4,4);
+    -webkit-transform: scale(4,4);
+    transform: scale(4,4);
+	transform-origin: top;  
+	image-rendering: pixelated;
+	image-rendering: -moz-crisp-edges;
+	@media(max-width: 1280px) {
+		-ms-transform: scale(2,2);
+		-webkit-transform: scale(2,2);
+		transform: scale(2,2);		
+	}
+	@media(max-width: 640px) {
+		-ms-transform: scale(1,1);
+		-webkit-transform: scale(1,1);
+		transform: scale(1,1);		
+	}
+}
+
+canvas#overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	display: block;
+	margin: 0 auto;
+	@media(max-width: 1280px) {
+		width: 640px;
+		height: 480px;
+	}
+	@media(max-width: 640px) {
+		width: 320px;
+		height: 240px;
+	}
+}
+
+
+
+@font-face {
+    font-family: "fixedsys";
+    src: url("../fonts/FSEX300.ttf") format("truetype");
+}
