@@ -512,7 +512,7 @@ function Player(data) {
 
 
 		// Shoot boolet if player is holding down the shoot key
-		if (Keyboard.shootKey && !this.shooting) {			
+		if (Keyboard.shootKey && !this.shooting && step_number > 5) {			
 			this.can_shoot = false;
 			this.start_shooting();
 			sound_laser.play();
@@ -1241,7 +1241,7 @@ function EnemyBossGhost(data) {
 			"duration": 9,
 			"initialAction": function() {
 				lightning_on = false;
-				this.ystart = this.y;				
+				this.ystart = 40;				
 				this.lifetime = 0;
 			},
 			"ongoingAction": function() {
@@ -1354,6 +1354,8 @@ function EnemyBossGhost(data) {
 		for(var i = 0; i < this.timers.length; i++) {
 			this.timers[i].cancel();
 		}		
+		lightning_on = false;
+		// Game end
 	}
 
 	this.step = function() {

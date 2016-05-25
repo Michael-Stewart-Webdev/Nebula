@@ -19,21 +19,7 @@ function Sprite(src, w, h, total_frames, hitboxSize = []) {
 		var y2 = (h - hitboxSize[1]) / 2 + (h/2);	 // 12
 		this.hitbox = [x1, y1, x2, y2];
 	}
-
-	
-
-	/*this.hitbox = function(x, y) {
-		console.log(hitbox);
-		// Calculate the hitbox based on the x and y of the sprite, and the size of the hitbox specified on init
-		return {
-			"x1": x + 0,
-			"y1": y + 0,
-			"x2": x + hitbox[0],
-			"y2": y + hitbox[1]
-		}
-	}*/
 }
-
 
 
 MISSING_SPRITE 			= new Sprite("images/sprites/missing.png", 16, 16, 1);

@@ -22,7 +22,7 @@ Sounds = {
 
 		audio = new Audio('music/david_bowie-space_oddity.mp3');
 
-		audio.play();	
+		
 
 		/* Sounds */
 		sound_laser = new Sound(['sounds/laser_1.wav', 'sounds/laser_2.wav', 'sounds/laser_3.wav']);

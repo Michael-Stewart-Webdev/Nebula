@@ -3,7 +3,10 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 var DEBUG_MODE = true;
 var debugStart = "3:23";
-
+var bypassMenu = false;
+var mode = "NONE"
+var second_ticker = null;
+var seconds_passed = 0;
 
 var myRequestAnimationFrame =  window.requestAnimationFrame ||
               window.webkitRequestAnimationFrame ||
@@ -22,6 +25,80 @@ window.requestAnimationFrame = myRequestAnimationFrame;
 Game = {
 
 	init: function() {
+
+		/* Begins the menu */
+		initMenu = function() {
+
+			Overlay = {
+				draw: function() {	
+					ctx_overlay.globalAlpha = Math.round(5 * menuAlpha) / 5;
+					ctx_overlay.fillStyle = "white";
+					ctx_overlay.font="40px fixedsys";
+					ctx_overlay.textAlign="left"; 
+					ctx_overlay.textBaseline = 'alphabetic';
+
+
+					drawFps = function() {
+						ctx_overlay.fillText("FPS: " + current_fps, 10, 37);
+					}
+
+					drawTitle = function() {
+						ctx_overlay.font="260px fixedsys";
+						ctx_overlay.textAlign="center"; 
+						ctx_overlay.fillText("NEBULA", canvas.width * 4 / 2, canvas.height * 2 / 2 + 50);
+					}
+
+					drawStartCommand = function() {
+						if(menuAlpha >= 1) {
+							ctx_overlay.globalAlpha = (menuTime % FRAME_RATE > FRAME_RATE / 2) + 0.4;
+
+						}
+						ctx_overlay.font="72px fixedsys";
+						ctx_overlay.textAlign="center"; 
+						ctx_overlay.fillText("PRESS SPACE TO START", canvas.width * 4 / 2, canvas.height * 4 / 2 + 50);		
+						ctx_overlay.globalAlpha = 1;				
+					}
+
+					if(DEBUG_MODE) {
+						drawFps();		
+					}						
+
+					drawTitle();					
+					drawStartCommand();					
+
+				}				
+			}
+
+			menuLoop = function() {
+				function clearCanvas() {
+					ctx.clearRect(0,0,canvas.width,canvas.height);
+					ctx_overlay.clearRect(0,0,canvas_overlay.width,canvas_overlay.height);
+				}
+				if(menuAlpha < 1) {
+					menuAlpha += 0.01;
+				}
+				menuTime++;
+				current_fps = fps.getFPS();	
+				clearCanvas();				
+				Overlay.draw();
+
+				if(Keyboard.shootKey) {
+					sound_laser.play();
+					initLevel();
+					return;
+				}
+				
+				gameTicker = requestAnimationFrame(menuLoop);
+			}
+
+
+			menuTime = 0;
+			menuAlpha = 0;
+			gameTicker = requestAnimationFrame(menuLoop);
+			
+			mode = "MENU";
+
+		}
 
 		/* Begins the level */
 		initLevel = function() {
@@ -130,8 +207,8 @@ Game = {
 					
 					drawComboCount = function() {
 						if(GameInfo.combo_count >= 3) {
-							ctx_overlay.textAlign = "middle"; 
-							ctx_overlay.fillText("COMBO: " + GameInfo.combo_count, (canvas.width * 4) / 2 - 48, 77);
+							ctx_overlay.textAlign = "right"; 
+							ctx_overlay.fillText("COMBO: " + GameInfo.combo_count, (canvas.width * 4) - 10, 37);
 							ctx_overlay.textAlign = "left"; 
 						}
 					}
@@ -151,83 +228,52 @@ Game = {
 							ctx_overlay.fillText(EventHandler.warningMessage, canvas.width/2 * 4, canvas.height/2 * 4 - 120); 
 					}
 					
-					drawHealthBar = function() {
-						ctx_overlay.font = "" + 32 + "px fixedsys";
+					drawBar = function(fontSize,barText, textX, textY, barSprite, barOverlaySprite, barEmptySprite, barX, barY, barWidthVariable) {
+						ctx_overlay.font = "" + fontSize + "px fixedsys";
 						ctx_overlay.textAlign = "center"; 
 						ctx_overlay.textBaseline = 'middle';
-						ctx_overlay.fillText("HEALTH", 144, canvas.height * 4 - 96); 
+						ctx_overlay.fillText(barText, textX, textY); 
 
-						var sprite_to_draw = s_bar_empty;
+						var sprite_to_draw = barEmptySprite;
 
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(4 + Camera.x_displacement ),	Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);						
+						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(barX + Camera.x_displacement ),	Math.floor(barY + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);	
 
-						var sprite_to_draw = s_healthbar_full;
-						if(player.health <= 75 && player.health > 25) sprite_to_draw = s_healthbar_half;
-						if(player.health <= 25) sprite_to_draw = s_healthbar_dying;
+						var sprite_to_draw = barSprite;
 
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w * player.health/100, sprite_to_draw.h, Math.floor(4 + Camera.x_displacement ), Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w * player.health/100, sprite_to_draw.h);
+						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w * barWidthVariable, sprite_to_draw.h, Math.floor(barX + Camera.x_displacement ), Math.floor(barY + Camera.y_displacement ), sprite_to_draw.w * barWidthVariable, sprite_to_draw.h);					
 
-						var sprite_to_draw = s_bar_overlay;
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(4 + Camera.x_displacement ),	Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);
+						var sprite_to_draw = barOverlaySprite;
+						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(barX + Camera.x_displacement ),	Math.floor(barY + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);
+
+
 					}
+
+					drawHealthBar = function() {
+						var healthBarSprite = s_healthbar_full;
+						if(player.health <= 75 && player.health > 25) healthBarSprite = s_healthbar_half;
+						if(player.health <= 25) healthBarSprite = s_healthbar_dying;
+
+						drawBar(32, "HEALTH", 144, canvas.height * 4 - 96, healthBarSprite, s_bar_overlay, s_bar_empty, 4, canvas.height - 20, player.health / 100);
+					}
+
 
 					drawSpecialBar = function() {
-						ctx_overlay.font = "" + 32 + "px fixedsys";
-						ctx_overlay.textAlign = "center"; 
-						ctx_overlay.textBaseline = 'middle';
-						ctx_overlay.fillText("SPECIAL (Q)", canvas.width * 4 - 144, canvas.height * 4 - 96); 
-
-						var sprite_to_draw = s_bar_empty;
-
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(canvas.width - 68 + Camera.x_displacement ),	Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);						
-
-						var sprite_to_draw = s_special_bar;
-
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w * player.special_energy/player.max_special_energy, sprite_to_draw.h, Math.floor(canvas.width - 68 + Camera.x_displacement ), Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w * player.special_energy/player.max_special_energy, sprite_to_draw.h);
-
-						var sprite_to_draw = s_bar_overlay;
+						var ov = s_bar_overlay;
 						if(specialbarBlink) {
-							var sprite_to_draw = s_bar_overlay_white;
+							ov = s_bar_overlay_white;
 						}
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(canvas.width - 68 + Camera.x_displacement ),	Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);
+						drawBar(32, "SPECIAL (Q)", canvas.width * 4 - 144, canvas.height * 4 - 96, s_special_bar, ov, s_bar_empty, canvas.width - 68, canvas.height - 20, player.special_energy/player.max_special_energy);					
 					}
+
 					drawPowerupBar = function() {
-						ctx_overlay.font = "" + 32 + "px fixedsys";
-						ctx_overlay.textAlign = "center"; 
-						ctx_overlay.textBaseline = 'middle';
-						ctx_overlay.fillText("POWER-UP", canvas.width * 4 / 2, canvas.height * 4 - 96); 
-
-						var sprite_to_draw = s_bar_empty;
-
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(canvas.width / 2 - 32 + Camera.x_displacement ),	Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);				
-
-						var sprite_to_draw = s_powerup_bar;
-
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w * player.powerupTimeRemaining/player.powerupTotalTime, sprite_to_draw.h, Math.floor(canvas.width / 2 - 32 + Camera.x_displacement ), Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w * player.powerupTimeRemaining/player.powerupTotalTime, sprite_to_draw.h);
-
-						var sprite_to_draw = s_bar_overlay;
-						ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(canvas.width / 2 - 32 + Camera.x_displacement ),	Math.floor(canvas.height - 20 + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);
+						drawBar(32, "POWER-UP", canvas.width * 4 / 2, canvas.height * 4 - 96, s_powerup_bar, s_bar_overlay, s_bar_empty, canvas.width / 2 - 32, canvas.height - 20, player.powerupTimeRemaining/player.powerupTotalTime);		
 					}
+
 					drawBossHealthBar = function() {
 						if(bossObject.bossBarAlpha > 0) {
 							ctx.globalAlpha = Math.round(8 * bossObject.bossBarAlpha) / 8;
 
-
-							ctx_overlay.font = "" + 44 + "px fixedsys";
-							ctx_overlay.textAlign = "center"; 
-							ctx_overlay.textBaseline = 'middle';
-							ctx_overlay.fillText("BOSS", canvas.width * 4 / 2, 124);
-
-							var sprite_to_draw = s_healthbar_boss_empty;
-
-							ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(32 + Camera.x_displacement ),	Math.floor(24 + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);						
-
-							var sprite_to_draw = s_healthbar_boss;
-
-							ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w * bossObject.health/bossObject.maxHealth, sprite_to_draw.h, Math.floor(32 + Camera.x_displacement ), Math.floor(24 + Camera.y_displacement ), sprite_to_draw.w * bossObject.health/bossObject.maxHealth, sprite_to_draw.h);
-
-							var sprite_to_draw = s_healthbar_boss_ov;
-							ctx.drawImage(sprite_to_draw.image, 0, 0, sprite_to_draw.w, sprite_to_draw.h,	Math.floor(32 + Camera.x_displacement ),	Math.floor(24 + Camera.y_displacement ), sprite_to_draw.w, sprite_to_draw.h);
+							drawBar(44, "BOSS", canvas.width * 4 / 2, 78, s_healthbar_boss, s_healthbar_boss_ov, s_healthbar_boss_empty, 32, 12, bossObject.health/bossObject.maxHealth);							
 
 							ctx.globalAlpha = 1;
 						}
@@ -287,7 +333,7 @@ Game = {
 			LevelHandler = {
 				GROUP: 0,
 				EVENT: 1,		
-				initLevel: function(level) {		// So it can start at 0 seconds (start of game) or 50 seconds, etc.	
+				initLevel: function(level) {
 
 					var levelData;
 					
@@ -585,10 +631,13 @@ Game = {
 
 			LevelHandler.initLevel(1);	
 			gameTicker = requestAnimationFrame(gameLoop);
-		};
 
-		initMenu = function() {
-			// Create menu stuff here
+			audio.play();
+
+			mode = "GAME";
+
+			second_ticker = new Timer(nekSecond, 1000);
+			seconds_passed = 0;
 
 		};
 
@@ -631,7 +680,8 @@ Game = {
 			},
 			keyPress: function(e) {
 				switch(e.keyCode) {
-					case 112: Debug.promptSkip();	// p on Chrome, F1 on ff
+
+					case 112: if(mode == "GAME") Debug.promptSkip();	// p on Chrome, F1 on ff
 				}
 			}
 		};
@@ -676,11 +726,14 @@ Game = {
 
 		Sounds.load();
 
-		initLevel();
-
-		if(typeof debugStart !== 'undefined' && DEBUG_MODE == true) {
-			Debug.skipToTime(debugStart);
+		if(bypassMenu) {
+			initLevel();
+		} else {
+			initMenu();
 		}
+		
+		//
+
 		
 	}
 }

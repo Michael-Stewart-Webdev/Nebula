@@ -31,55 +31,58 @@ function nekSecond() {
 }
 
 var gamePaused = false; 
-var second_ticker = new Timer(nekSecond, 1000);
-var seconds_passed = 0;
+
 
 window.onfocus = function () { 
-	if(gamePaused == true) {
-		gameTicker = requestAnimationFrame(gameLoop);
-		audio.play();
-		second_ticker.resume();
-		for(var i = 0; i < SpawnHandler.spawnTimers.length; i++) { SpawnHandler.spawnTimers[i].resume(); }
-		for(var i = 0; i < EventHandler.eventTimers.length; i++) { EventHandler.eventTimers[i].resume(); }
-		for(var i = 0; i < EventHandler.eventEndTimers.length; i++) { EventHandler.eventEndTimers[i].resume(); }
-		//for(var i = 0; i < player.timers.length; i++) { player.timers[i].resume(); }
-		if(Camera.shakeTimer) {  Camera.shakeTimer.resume(); }
-		if(Player.specialRegenTimer) {  Player.specialRegenTimer.resume(); }
-		if(Player.powerupTimer) {  Player.powerupTimer.resume(); }
-		if(Player.pickupMessageRemovalTimer) {  Player.pickupMessageRemovalTimer.resume(); }
+	if(mode == "GAME") {
+		if(gamePaused == true) {
+			gameTicker = requestAnimationFrame(gameLoop);
+			audio.play();
+			second_ticker.resume();
+			for(var i = 0; i < SpawnHandler.spawnTimers.length; i++) { SpawnHandler.spawnTimers[i].resume(); }
+			for(var i = 0; i < EventHandler.eventTimers.length; i++) { EventHandler.eventTimers[i].resume(); }
+			for(var i = 0; i < EventHandler.eventEndTimers.length; i++) { EventHandler.eventEndTimers[i].resume(); }
+			//for(var i = 0; i < player.timers.length; i++) { player.timers[i].resume(); }
+			if(Camera.shakeTimer) {  Camera.shakeTimer.resume(); }
+			if(Player.specialRegenTimer) {  Player.specialRegenTimer.resume(); }
+			if(Player.powerupTimer) {  Player.powerupTimer.resume(); }
+			if(Player.pickupMessageRemovalTimer) {  Player.pickupMessageRemovalTimer.resume(); }
+
+			// For any object that is part of the timerObjects array, pause/resume their timers
+			for(var i = 0; i < timerObjects.length; i++) { 
+				for(var j = 0; j < timerObjects[i].timers.length; j++) {
+					timerObjects[i].timers[j].resume();
+				}			
+			}
+
+			gamePaused = false;
+		} 
+	}
+}; 
+
+window.onblur = function () { 
+	if(mode == "GAME") {
+		window.cancelAnimationFrame(gameTicker);
+		audio.pause();
+		second_ticker.pause();
+		for(var i = 0; i < SpawnHandler.spawnTimers.length; i++) { SpawnHandler.spawnTimers[i].pause(); }
+		for(var i = 0; i < EventHandler.eventTimers.length; i++) { EventHandler.eventTimers[i].pause(); }
+		for(var i = 0; i < EventHandler.eventEndTimers.length; i++) { EventHandler.eventEndTimers[i].pause(); }
+		//for(var i = 0; i < player.timers.length; i++) { player.timers[i].pause(); }
+		if(Camera.shakeTimer) { Camera.shakeTimer.pause(); }
+		if(Player.specialRegenTimer) {  Player.specialRegenTimer.pause(); }
+		if(Player.powerupTimer) {  Player.powerupTimer.pause(); }
+		if(Player.pickupMessageRemovalTimer) {  Player.pickupMessageRemovalTimer.pause(); }
 
 		// For any object that is part of the timerObjects array, pause/resume their timers
 		for(var i = 0; i < timerObjects.length; i++) { 
 			for(var j = 0; j < timerObjects[i].timers.length; j++) {
-				timerObjects[i].timers[j].resume();
+				timerObjects[i].timers[j].pause();
 			}			
 		}
 
-		gamePaused = false;
-	} 
-}; 
-
-window.onblur = function () { 
-	window.cancelAnimationFrame(gameTicker);
-	audio.pause();
-	second_ticker.pause();
-	for(var i = 0; i < SpawnHandler.spawnTimers.length; i++) { SpawnHandler.spawnTimers[i].pause(); }
-	for(var i = 0; i < EventHandler.eventTimers.length; i++) { EventHandler.eventTimers[i].pause(); }
-	for(var i = 0; i < EventHandler.eventEndTimers.length; i++) { EventHandler.eventEndTimers[i].pause(); }
-	//for(var i = 0; i < player.timers.length; i++) { player.timers[i].pause(); }
-	if(Camera.shakeTimer) { Camera.shakeTimer.pause(); }
-	if(Player.specialRegenTimer) {  Player.specialRegenTimer.pause(); }
-	if(Player.powerupTimer) {  Player.powerupTimer.pause(); }
-	if(Player.pickupMessageRemovalTimer) {  Player.pickupMessageRemovalTimer.pause(); }
-
-	// For any object that is part of the timerObjects array, pause/resume their timers
-	for(var i = 0; i < timerObjects.length; i++) { 
-		for(var j = 0; j < timerObjects[i].timers.length; j++) {
-			timerObjects[i].timers[j].pause();
-		}			
+		gamePaused = true;	
 	}
-
-	gamePaused = true;	
 	
 }; 
 
@@ -186,9 +189,7 @@ Debug = {
 			second_ticker.cancel();
 			second_ticker = new Timer(nekSecond, 1000);
 			EventHandler.clearAllEvents();
-			LevelHandler.initLevel(1);		
-
-			
+			LevelHandler.initLevel(1);	
 			
 			audio.currentTime = seconds;	// Skip the audio
 		} else {

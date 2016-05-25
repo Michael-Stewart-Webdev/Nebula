@@ -177,7 +177,13 @@
 				"fontSize": 70,
 				"duration": "0:05"
 			}
-		},		
+		},
+		{
+			"time": "1:22",
+			"pickups": [
+				{"id": 0, "x": 10, "y": 0} // Health pickup
+			]
+		},	
 		
 		{
 			"time": "1:25", //asteroid thing here (music intensifies)	// Note: takes 8 seconds to fully appear, and 15 seconds to disappear
@@ -346,19 +352,14 @@
 			]
 		},
 
-		{
-			"time": "2:10",
-			"pickups": [
-				{"id": 0, "x": 10, "y": 0} // Health pickup
-			]
-		},
 
-		{
+
+		/*{
 			"time": "2:13",
 			"pickups": [
 				{"id": 1, "x": 10, "y": 0} // Quick reflexes
 			]
-		},
+		},*/
 		{
 			"time": "2:14",
 			"enemies": [
@@ -465,7 +466,7 @@
 			]
 		},
 		{
-			"time": "3:05",
+			"time": "3:04",
 			"pickups": [
 				{"id": 1, "x": 10, "y": 0} // Quick reflexes
 			]
