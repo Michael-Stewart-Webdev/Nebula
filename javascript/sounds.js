@@ -25,6 +25,9 @@ Sounds = {
 		
 
 		/* Sounds */
+		sound_menu_nav = new Sound('sounds/menu_navigation.wav');
+		sound_menu_nav_deep = new Sound('sounds/menu_navigation_deep.wav');
+
 		sound_laser = new Sound(['sounds/laser_1.wav', 'sounds/laser_2.wav', 'sounds/laser_3.wav']);
 		sound_enemy_laser = new Sound('sounds/enemy_laser.wav');
 		sound_alien_dead = new Sound('sounds/alien_dead.wav');

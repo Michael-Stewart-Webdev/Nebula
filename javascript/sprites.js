@@ -2,6 +2,7 @@
 /*											  	 Sprites												 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+
 function Sprite(src, w, h, total_frames, hitboxSize = []) {
 	this.image = new Image();
 	this.image.src = src;
@@ -9,14 +10,17 @@ function Sprite(src, w, h, total_frames, hitboxSize = []) {
 	this.w = w || 16;
 	this.h = h || 16;
 
+	// Generic hitbox, for colliding with everything except the player
 	// x1, y1, x2, y2
 	if(hitboxSize.length == 0) {
+		
 		this.hitbox = [0, 0, w, h];
 	} else {
-		var x1 = (w - hitboxSize[0]) / 2;    		 // 4
-		var y1 = (h - hitboxSize[1]) / 2;	 		 // 4
-		var x2 = (w - hitboxSize[0]) / 2 + (w/2);    // 12
-		var y2 = (h - hitboxSize[1]) / 2 + (h/2);	 // 12
+		var x1 = (w - hitboxSize[0]) / 2;
+		var y1 = (h - hitboxSize[1]) / 2;
+		var x2 = w - x1; 
+		var y2 = h - y1;
+		//console.log(x1, y1, x2, y2);
 		this.hitbox = [x1, y1, x2, y2];
 	}
 }
@@ -24,6 +28,7 @@ function Sprite(src, w, h, total_frames, hitboxSize = []) {
 
 MISSING_SPRITE 			= new Sprite("images/sprites/missing.png", 16, 16, 1);
 s_player 				= new Sprite("images/sprites/player.png", 16, 16, 1, hitboxSize = [8, 8]);	
+s_player_menu			= new Sprite("images/sprites/player_menu.png", 16, 16, 1);	
 s_player_shooting 		= new Sprite("images/sprites/player_shooting.png", 16, 16, 3);
 s_player_hitbox 		= new Sprite("images/sprites/player_hitbox.png", 8, 8, 1);
 
@@ -48,7 +53,7 @@ s_enemy_1_red 			= new Sprite("images/sprites/enemy_1_red.png", 16, 16, 2);
 s_enemy_2 				= new Sprite("images/sprites/enemy_2.png", 16, 16, 1);
 s_enemy_2_red 			= new Sprite("images/sprites/enemy_2_red.png", 16, 16, 1);
 s_enemy_3	 			= new Sprite("images/sprites/enemy_3.png", 20, 20, 2, hitboxSize = [16, 16]);
-s_enemy_3_red 			= new Sprite("images/sprites/enemy_3_red.png", 20, 20, 2);
+s_enemy_3_red 			= new Sprite("images/sprites/enemy_3_red.png", 20, 20, 2, hitboxSize = [16, 16]);
 s_enemy_4	 			= new Sprite("images/sprites/enemy_4.png", 20, 20, 2);
 s_enemy_4_red 			= new Sprite("images/sprites/enemy_4_red.png", 20, 20, 2);
 s_enemy_4_er 			= new Sprite("images/sprites/enemy_4_enraged.png", 20, 20, 1);
@@ -56,10 +61,15 @@ s_enemy_4_morph			= new Sprite("images/sprites/enemy_4_morph.png", 20, 20, 8);
 s_enemy_2_gold 			= new Sprite("images/sprites/enemy_2_gold.png", 16, 16, 1);
 s_enemy_2_gold_shooting	= new Sprite("images/sprites/enemy_2_gold_shooting.png", 16, 16, 1);
 s_enemy_2_gold_red 		= new Sprite("images/sprites/enemy_2_gold_red.png", 16, 16, 1);
+s_enemy_6 				= new Sprite("images/sprites/enemy_6.png", 20, 20, 2);
+s_enemy_6_red 			= new Sprite("images/sprites/enemy_6_red.png", 20, 20, 1);
+s_enemy_6_shooting		= new Sprite("images/sprites/enemy_6_shooting.png", 20, 20, 2);
 
 s_enemy_boss_ghost		= new Sprite("images/sprites/black_ghost_2.png", 64, 64, 1, hitboxSize = [48, 64]);
-s_enemy_boss_ghost_red	= new Sprite("images/sprites/black_ghost_2_red.png", 64, 64, 1);
+s_enemy_boss_ghost_red	= new Sprite("images/sprites/black_ghost_2_red.png", 64, 64, 1, hitboxSize = [48, 64]);
 
+s_ghost_eyes 			= new Sprite("images/sprites/ghost_eyes.png", 16, 16, 1, hitboxSize = [6, 6]);
+s_ghost_boss_eyes 		= new Sprite("images/sprites/black_ghost_eyes.png", 64, 64, 1, hitboxSize = [48, 64]);
 
 // Enemy bits
 s_enemy_1_bits			= new Sprite("images/sprites/bits/bits_blob.png", 16, 16, 7);
@@ -70,8 +80,7 @@ s_enemy_4_er_bits		= new Sprite("images/sprites/bits/bits_ghost_red.png", 16, 16
 s_enemy_2_gold_bits		= new Sprite("images/sprites/bits/bits_ufo_gold.png", 16, 16, 8);
 s_enemy_ghost_boss_bits	= new Sprite("images/sprites/bits/bits_ghost_boss.png", 16, 16, 5);
 
-s_ghost_eyes 			= new Sprite("images/sprites/ghost_eyes.png", 16, 16, 1);
-s_ghost_boss_eyes 		= new Sprite("images/sprites/black_ghost_eyes.png", 64, 64, 1);
+
 
 // Deco
 s_rock_1 				= new Sprite("images/sprites/rock_1.png", 16, 16, 1);
@@ -105,6 +114,7 @@ s_asteroids_1			= new Sprite("images/backgrounds/asteroids_1.png", 320, 240, 1);
 
 // Nebulae
 
+s_nebula_menu			= new Sprite("images/backgrounds/nebulas/red_spider_nebula.png", 320, 240, 1)
 s_nebula_1 				= new Sprite("images/backgrounds/nebulas/little_ghost_nebula.png", 320, 240, 1)
 s_nebula_1_lightning	= new Sprite("images/backgrounds/nebulas/lightning/little_ghost_nebula.png", 320, 240, 1)
 

@@ -60,17 +60,40 @@ function Object(data) {
 	objects.push(this);	
 
 
-	this.checkCollisionWithObj = function(obj) {
-		var thb = this.sprite.hitbox;
-		var ohb = obj.sprite.hitbox;
-		var tx1 = this.x + thb[0];
-		var ty1 = this.y + thb[1];
-		var tx2 = this.x + thb[2];
-		var ty2 = this.y + thb[3];
-		var ox1 = obj.x  + ohb[0];
-		var oy1 = obj.y  + ohb[1];
-		var ox2 = obj.x  + ohb[2];
-		var oy2 = obj.y  + ohb[3];
+	this.checkCollisionWithObj = function(obj, useThisHitbox = false, useObjHitbox = false) {
+		// Always use the hitboxes when the player is the object
+		if(obj == player) {
+			useThisHitbox = true;
+			useObjHitbox  = true;
+		}
+
+
+		if(useThisHitbox) {
+			var thb = this.sprite.hitbox;
+			var tx1 = this.x + thb[0];
+			var ty1 = this.y + thb[1];
+			var tx2 = this.x + thb[2];
+			var ty2 = this.y + thb[3];
+		} else {
+			var tx1 = this.x;
+			var ty1 = this.y; 
+			var tx2 = this.x + this.sprite.w;
+			var ty2 = this.y + this.sprite.h;
+		}
+		if(useObjHitbox) {
+			var ohb = obj.sprite.hitbox
+			var ox1 = obj.x  + ohb[0];
+			var oy1 = obj.y  + ohb[1];
+			var ox2 = obj.x  + ohb[2];
+			var oy2 = obj.y  + ohb[3];
+		} else {
+			var ox1 = obj.x;
+			var oy1 = obj.y; 
+			var ox2 = obj.x + obj.sprite.w;
+			var oy2 = obj.y + obj.sprite.h;
+		}
+
+
 
 		if(tx1 >= ox1 && tx1 <= ox2) {
 			if(ty1 >= oy1 && ty1 <= oy2) {	
@@ -102,6 +125,10 @@ function Object(data) {
 				if(step_number % (FRAME_RATE / 3) == 0) {
 					var hologram = new Hologram(data = {x: this.x, y: this.y, sprite: this.sprite});
 				}
+			}
+			// Enemies, bullets etc get faster if player is playing on Hard
+			if(difficulty == 3) {
+				adjusted_speed *= 1.333;
 			}
 		
 			radians = (this.direction + 90) * (Math.PI/180)
@@ -283,6 +310,9 @@ function Starfield(data) {
 				this.y = 0;
 			}		
 		}
+		if(player.movingToVictory) {
+			this.speed *= 0.99;
+		}
 	}	
 	
 	// Fade in
@@ -346,7 +376,7 @@ function Player(data) {
 	
 	this.special_energy = 100;
 	this.max_special_energy = 100;
-	this.special_shoot_time_total = FRAME_RATE / 10;	
+	this.special_shoot_time_total = FRAME_RATE / 15;	
 	this.canRegen = false;
 	this.regenDelay = 3000; // 3 seconds
 	this.specialEnergyCost = 4;
@@ -370,10 +400,20 @@ function Player(data) {
 	this.powerupTimeRemaining = 0;
 	this.powerupBG = null;
 
+	this.pickupMessageRemovalTimer = null;
+
 	this.specialRegenTimer = null;
 
 	this.health = 100;
 	this.affectedByLightning = false;
+
+	gameWon = false;
+	gameLost = false;
+
+	this.endGameTimer = null;
+
+	this.movingToVictory = false;
+
 
 
 	this.regenSpecialEnergy = function() {
@@ -421,8 +461,9 @@ function Player(data) {
 		this.powerupTimer = new Timer(function() { 
 			player.tickDownPowerup(powerup);
 		}, 500);
-		var pickupMessageRemovalTimer = new Timer(function() { 
+		this.pickupMessageRemovalTimer = new Timer(function() { 
 			player.clearPickupMessage();
+			player.pickupMessageRemovalTimer = null;
 		}, 3000);
 		this.pickupMessage = "" + powerup.toUpperCase() + " OBTAINED!"
 		//this.timers.push(powerupTimer);
@@ -447,6 +488,7 @@ function Player(data) {
 		this.powerupTotalTime = 0;
 		this.powerup = null;
 		this.powerupBG = null;
+		this.powerupTimer = null;
 		console.log("powerup removed");	
 		if(powerup == "quick reflexes") {
 			for(var i = 0; i < sounds.length; i++) {
@@ -467,11 +509,21 @@ function Player(data) {
 		}
 	}
 	  
+	this.moveToVictory = function() {
+		this.y -= 1;
+		if(this.y < -16) {
+			LevelHandler.endLevel();
+		}
+	}
+
 	this.step = function() {
 		this.checkMoves();
 		this.regenSpecialEnergy();
 		this.checkSpecialBarBlink();
 		//playerHitbox.moveToPlayer();
+		if(this.movingToVictory) {
+			this.moveToVictory();
+		}
 	}		
 	
 
@@ -493,9 +545,14 @@ function Player(data) {
 	}	
 	
 	this.checkMoves = function() {
-	
+		if(this.movingToVictory) {
+			return;
+		}
+
 		if(current_fps > 0) adjusted_speed = this.speed * delta();
 		else adjusted_speed = this.speed;
+
+
 	
 		// Check keys
 		if (Keyboard.rightKey) this.x += adjusted_speed;
@@ -507,7 +564,7 @@ function Player(data) {
 		if (this.x <= 0) this.x = 0;
 		if ((this.x + this.sprite.w) >= canvas.width) this.x = canvas.width - this.sprite.w;
 		if (this.y <= 0) this.y = 0;
-		if ((this.y + this.sprite.h) >= canvas.height) this.y = canvas.height - this.sprite.h; 
+		if ((this.y + this.sprite.h) >= canvas.height - HUD_HEIGHT) this.y = canvas.height - HUD_HEIGHT - this.sprite.h; 
 
 
 
@@ -547,6 +604,15 @@ function Player(data) {
 			}
 		}
 	} 
+
+
+
+	this.endGame = function() {
+		this.endGameTimer = new Timer(function() { 
+			player.movingToVictory = true;
+			player.endGameTimer = null;
+		}, 3000);
+	}
 }
 
 /*function PlayerHitbox() {
@@ -612,7 +678,7 @@ function EnemyBullet(data) {
 	this.damage = data.damage || 10;
 	enemyBullets.push(this);
 	this.sprite = data.sprite || s_bullet_alien;
-
+	this.direction = data.direction || 270;
 
 
 	this.checkCollision = function() {
@@ -622,30 +688,17 @@ function EnemyBullet(data) {
 				player.start_blinking();
 				sound_player_damaged.play();
 				player.health -= this.damage;
+				if(difficulty == 3) {
+					player.health -= this.damage;
+				}
+				if(difficulty == 1) {
+					player.health += this.damage/2;
+				}
 				Camera.shakeBriefly();
 			}
 		}
 			
 		var collisionObj = null;
-		
-		/*this.checkCollisionWithObj = function(obj) {
-			if(this.x >= obj.x && this.x <= (obj.x + obj.sprite.w)) {
-				if(this.y >= obj.y && this.y <= (obj.y + obj.sprite.h)) {	
-					return obj;	
-				}
-				if(this.y <= obj.y && (this.y + this.sprite.h) >= (obj.y)) {	
-					return obj;
-				}
-			}
-			if(this.x <= obj.x && (this.x + this.sprite.w) >= (obj.x)) {
-				if(this.y >= obj.y && this.y <= (obj.y + obj.sprite.h)) {		
-					return obj;	
-				}
-				if(this.y <= obj.y && (this.y + this.sprite.h) >= (obj.y)) {	
-					return obj;
-				}			
-			}
-		}*/		
 		
 		// Check for collision with the player
 		collisionObj = this.checkCollisionWithObj(player);
@@ -660,7 +713,7 @@ function EnemyBullet(data) {
 		if(this.y < -16) {
 			this.destroy();
 		}
-		if(this.y > canvas.height) {
+		if(this.y > canvas.height - HUD_HEIGHT) {
 			this.destroy();
 		}	
 	}
@@ -778,13 +831,14 @@ function Enemy(data) {
 		}
 	}
 	
-	this.shootPlayer = function() {
+	this.shootPlayer = function(bulletType, shootX = 6, shootY = 12, silent = false) {
 		if(this.canShoot == true && this.y > 0 && this.y < player.y) {
 			r = random(0, 1);
 			if(r < this.randomShootChance) {
-				this.shootingSound.play();
+				if(!silent)
+					this.shootingSound.play();
 				this.start_shooting();
-				var bullet = new EnemyUFOBullet(data = {x: this.x + 6, y: this.y + 12, accuracy: this.accuracy});
+				var bullet = new bulletType(data = {x: this.x + shootX, y: this.y + shootY, accuracy: this.accuracy});
 				this.shooting = true;
 				this.shootCooldown = this.shootCooldownMax;
 				if(player.hasPowerup("quick reflexes")) {
@@ -832,7 +886,11 @@ function Enemy(data) {
 
 	this.collideWithDecoObject = function(collisionObj) {			
 		this.health -= collisionObj.damage;
-		this.start_blinking();			
+		this.start_blinking();	
+
+		if(this.health <= 0) {
+			this.die(scoreless = true);
+		}		
 		
 		collisionObj.die();
 	}
@@ -842,6 +900,12 @@ function Enemy(data) {
 			player.start_blinking();
 			sound_player_damaged.play();
 			player.health -= this.damage;
+			if(difficulty == 3) {
+				player.health -= this.damage;
+			}
+			if(difficulty == 1) {
+				player.health += this.damage/2;
+			}
 			Camera.shakeBriefly();
 		}
 	}	
@@ -897,7 +961,33 @@ function EnemyBasic(data) {
 		this.checkDie();
 		this.checkCollision();		
 		this.move();
-		if(this.y > canvas.height) {
+		if(this.y > canvas.height - HUD_HEIGHT) {
+			this.destroy();
+		}
+	}
+}
+
+// The most basic enemy, with a gun.
+function EnemyBasicGunner(data) {
+	Enemy.call(this, data);
+	this.health = 40;	
+	this.speed = 0.75;	
+	this.image_speed = 0.1;
+	this.sprite = s_enemy_6;
+	this.shooting_sprite = s_enemy_6_shooting;
+	this.bits_sprite = s_enemy_2_gold_bits;
+	this.blinking_sprite = s_enemy_6_red;
+	this.bits_count = 5;
+	this.damage = 10;
+	
+	this.score_value = 10;
+	
+	this.step = function() {
+		this.checkDie();
+		this.checkCollision();		
+		this.move();
+		this.shootPlayer(EnemyBullet, shootX = 8, shootY = 14, silent = true);
+		if(this.y > canvas.height - HUD_HEIGHT) {
 			this.destroy();
 		}
 	}
@@ -947,7 +1037,7 @@ function EnemyUFO(data) {
 				this.change_direction([45, 90, 135]);
 			}
 		} else {
-			if(this.y > canvas.height + 32) { this.destroy(); }
+			if(this.y > canvas.height - HUD_HEIGHT) { this.destroy(); }
 		}
 	
 	}
@@ -988,7 +1078,7 @@ function EnemyGoldUFO(data) {
 		this.checkCollision();		
 		this.moveUFO(persistent = true);
 		this.move();
-		this.shootPlayer();
+		this.shootPlayer(EnemyUFOBullet);
 		if(this.y > canvas.height) {
 			this.destroy();
 		}
@@ -1151,7 +1241,7 @@ function EnemyBossGhost(data) {
 
 	this.rage = 0; // The amount of rage the boss has. The higher this number, the scarier he is.
 
-	this.maxHealth = 1000;	
+	this.maxHealth = 500 + (250 * difficulty); // 750 on easy, 1000 on normal, 1250 on hard	
 	bossObject = this;
 	this.bossBarAlpha = 0;
 
@@ -1159,7 +1249,7 @@ function EnemyBossGhost(data) {
 
 	this.bossActions = {
 		"introduction": {
-			"duration": 5,
+			"duration": 6,
 			"initialAction": function() {
 				this.speed = 0.75;
 			},
@@ -1168,7 +1258,7 @@ function EnemyBossGhost(data) {
 					this.speed = 0;
 					this.bossBarAlpha += 0.02;
 					if(this.health <= this.maxHealth) {
-						this.health += 10;
+						this.health += 5 + (2.5 * difficulty);
 					}
 
 				}
@@ -1176,7 +1266,7 @@ function EnemyBossGhost(data) {
 			"nextAction": "roaring"
 		},
 		"roaring": {
-			"duration": 6,
+			"duration": 10,
 			"initialAction": function() {
 				this.immune = false;
 				// Destroy UFOs on the initial roar
@@ -1192,19 +1282,32 @@ function EnemyBossGhost(data) {
 				spawnGhosts = function(numberOfWaves) {					
 					var spawnData = [];
 			
+
 					for(var w = 0; w < numberOfWaves; w++) {
-						for(var x = 0; x <= 20; x += 2) {
-							var enemy = {"id": 2, "x": x,"y": random(-1, -3) - (w * 1/numberOfWaves * 15)};
+						var consecutiveGhosts = 0;
+						for(var x = 0; x <= 20; x += 1) {
+							var enemy = {"id": 2, "x": x,"y": random(-1, -4) - (w * 1/numberOfWaves * 36 * random(1, 1.2))};
 							var r = random(0, 1);
-							if(r >= 0.6) {
+							if(difficulty == 3) {
+								r += 0.1;
+							}
+							if(r >= 0.8 && consecutiveGhosts <= 2) {
 								spawnData.push(enemy);
+								consecutiveGhosts++;
+							} else {
+								consecutiveGhosts = 0;
 							}
 						}
 					}
 					SpawnHandler.spawnGroup(spawnData);
+					for(var i = 0; i < objects.length; i++) {
+						if(objects[i] instanceof EnemyGhost) {
+							objects[i].speed = 1.7 * random(1, 1.2) * random(1, 1+(difficulty/30));
+						}
+					}
 				}
 
-				var numberOfWaves = Math.min(15, Math.floor(7 + this.rage/2));
+				var numberOfWaves = Math.min(19, Math.floor(11 + this.rage/2)) + ((difficulty - 1) * 4);
 
 				spawnGhosts(numberOfWaves);
 				if(this.rage == 2) {
@@ -1217,22 +1320,36 @@ function EnemyBossGhost(data) {
 				Camera.shakeBriefly(intensity = 7);
 				lightning_on = true;
 			},
-			"ongoingAction": function() {
+			"ongoingAction": function() {							
 				// Speeds up ghosts to make them more scary over time
-				this.influenceGhosts = function() {					
+				this.influenceGhosts = function() {		
+					var ghostCount = 0;			
 					for(var i = 0; i < objects.length; i++) {
 						if(objects[i] instanceof EnemyGhost) {
-							objects[i].speed *= 1.0 + random(0, 0.008 + this.rage/2000);
 							if(objects[i].health > 30) {
 								objects[i].health = 30;
 							}
-							//if(objects[i].swing_amount == 40) {
-							//	objects[i].swing_amount = random(20, 60);
-							//}
+							if(objects[i].health <= 0) {
+								var r = random(0, 1);
+								if(difficulty == 1) {
+									r += 0.2;
+								}
+								if(r > 0.5) {
+									new Pickup20HealthObject(data = {x: objects[i].x + 4, y: objects[i].y + 4});
+								}
+							}
+							ghostCount++;
 						}
+					}
+					if(ghostCount == 0) {
+						this.timers[0].cancel();
+						this.timers = [];
+						this.changeAction("shooting");
 					}					
 				}				
 				this.influenceGhosts();
+
+
 
 			},
 			"nextAction": "shooting"
@@ -1248,13 +1365,19 @@ function EnemyBossGhost(data) {
 				this.moveGhost = function() {
 					this.lifetime += delta();
 					rads = this.lifetime * (Math.PI/180);
-					this.x = Math.floor(this.xstart + (this.swing_amount * Math.sin(rads * 2)));
-					this.y = Math.floor(this.ystart + (this.swing_amount / 4 * Math.sin(rads * 1.25)));	
+					var adjusted_speed = 1;
+					if(difficulty == 3) {
+						adjusted_speed *= 1.333;
+					}
+					this.x = Math.floor(this.xstart + (this.swing_amount * Math.sin(rads * 1.5 * adjusted_speed)));
+					this.y = Math.floor(this.ystart + (this.swing_amount / 4 * Math.sin(rads * 1.25 * adjusted_speed)));	
 				}
 
 				this.shootPlayer = function() {
 					// Will shoot faster when angrier
 					var delay = Math.max(5, Math.floor(8 - this.rage / 5));
+					if(difficulty == 1)
+						delay += 2;
 
 					if(step_number % delay == 0) {
 						hand = -hand;						
@@ -1262,7 +1385,7 @@ function EnemyBossGhost(data) {
 					}
 				}
 				this.moveGhost();
-				this.shootPlayer();
+				this.shootPlayer(EnemyUFOBullet);
 			},
 			"nextAction": "charging"
 		},
@@ -1349,13 +1472,18 @@ function EnemyBossGhost(data) {
 	}
 
 	this.destroy = function() {
-		objects_to_delete.push(this);
+
 		bossObject = null;
 		for(var i = 0; i < this.timers.length; i++) {
 			this.timers[i].cancel();
+			this.timers.splice(this.timers.indexOf(this.timers[i]), 1);
 		}		
 		lightning_on = false;
 		// Game end
+		timerObjects_to_delete.push(this);
+		objects_to_delete.push(this);
+
+		player.endGame();
 	}
 
 	this.step = function() {
@@ -1396,7 +1524,7 @@ function ScorePopUp(data) {
 		ctx_overlay.globalAlpha = this.processImageAlpha();
 		ctx_overlay.textAlign = 'center';
 		ctx_overlay.textBaseline = 'middle';
-		ctx_overlay.font = 35 + this.score_value + "px fixedsys";
+		ctx_overlay.font = 35 + Math.min(100, this.score_value) + "px fixedsys";
 		ctx_overlay.fillText(this.score_value * 10, this.x * 4, this.y * 4);	
 		ctx_overlay.font="40px fixedsys";	
 		ctx_overlay.textAlign = 'left';	
@@ -1455,6 +1583,12 @@ function DecoObject(data) {
 			player.start_blinking();
 			sound_player_damaged.play();
 			player.health -= this.damage;
+			if(difficulty == 3) {
+				player.health -= this.damage;
+			}
+			if(difficulty == 1) {
+				player.health += this.damage/2;
+			}
 			Camera.shakeBriefly();
 		}
 		this.die();
@@ -1492,7 +1626,7 @@ function DecoObjectRock2(data) {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
-/* A decorative object, like a rock */
+/* A pickup object, such as a power-up */
 function PickupObject(data) {
 	Object.call(this, data);
 	this.direction = 270;

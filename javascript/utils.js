@@ -47,6 +47,7 @@ window.onfocus = function () {
 			if(Player.specialRegenTimer) {  Player.specialRegenTimer.resume(); }
 			if(Player.powerupTimer) {  Player.powerupTimer.resume(); }
 			if(Player.pickupMessageRemovalTimer) {  Player.pickupMessageRemovalTimer.resume(); }
+			if(Player.endGameTimer) {  Player.endGameTimer.resume(); }
 
 			// For any object that is part of the timerObjects array, pause/resume their timers
 			for(var i = 0; i < timerObjects.length; i++) { 
@@ -73,6 +74,7 @@ window.onblur = function () {
 		if(Player.specialRegenTimer) {  Player.specialRegenTimer.pause(); }
 		if(Player.powerupTimer) {  Player.powerupTimer.pause(); }
 		if(Player.pickupMessageRemovalTimer) {  Player.pickupMessageRemovalTimer.pause(); }
+		if(Player.endGameTimer) {  Player.endGameTimer.pause(); }
 
 		// For any object that is part of the timerObjects array, pause/resume their timers
 		for(var i = 0; i < timerObjects.length; i++) { 
@@ -108,6 +110,16 @@ function convertToMilliseconds(time) {
 
 function convertToSeconds(time) {
 	return convertToMilliseconds(time) / 1000;
+}
+
+function convertDifficultyToString() {
+	switch(difficulty) {
+		case 1: return "Easy";
+		case 2: return "Normal";
+		case 3: return "Hard";
+	}
+	return "Error";
+	
 }
 
 // Random (because js doesn't have a good one)
@@ -200,6 +212,7 @@ Debug = {
 	promptSkip: function() {
 		if(DEBUG_MODE)
 			var skip = prompt("What time to skip to (in seconds)?");
+		if(skip) 
 			this.skipToTime(skip);
 	}
 }
